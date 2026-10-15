@@ -1,0 +1,13 @@
+from playwright.sync_api import expect
+
+
+# ④ 加入购物车 → 购物车角标从空变成 1
+def test_add_to_cart(login):
+    login.get_by_role("button", name="Add to cart").first.click()
+    expect(login.locator(".shopping_cart_badge")).to_have_text("1")
+
+
+# ⑤ 按价格从低到高排序 → 第一件商品必须是 $7.99
+def test_sort_by_price(login):
+    login.get_by_role("combobox").select_option("lohi")
+    expect(login.locator(".inventory_item_price").first).to_have_text("$7.99")
