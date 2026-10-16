@@ -11,16 +11,8 @@ from pages.login_page import LoginPage
 AUTH_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "auth.json")
 
 
-@pytest.fixture(scope="session")
-def auth_file(browser):
-    """登录态文件：整个测试会话只做一次真实 UI 登录，之后所有用例复用。
-
-    第一次跑：真登录 → 把 cookie / localStorage 存成 auth.json
-    之后每次跑：直接用现成的 auth.json，一次登录 UI 都不走
-    """
-    if os.path.exists(AUTH_FILE):
-        return AUTH_FILE
-
+def _login_and_save(browser) -> str:
+    """真实走一次 UI 登录，把登录态存进 auth.json"""
     context = browser.new_context()
     page = context.new_page()
     LoginPage(page).open().login(*USERS["standard"])
@@ -29,6 +21,41 @@ def auth_file(browser):
     context.storage_state(path=AUTH_FILE)
     context.close()
     return AUTH_FILE
+
+
+def _storage_state_still_valid(browser) -> bool:
+    """验货：拿缓存登录态去开受保护页，能看到商品列表才算有效。
+
+    为什么不能只看文件在不在 —— 登录态是会过期的！
+    saucedemo 的 session cookie 只有 10 分钟寿命，过期后 Playwright
+    加载时会把失效 cookie 直接丢弃，等于没登录。真实系统的 session
+    一样会过期，所以「复用前先验货、失效就重登」是框架的标准兜底。
+    """
+    context = browser.new_context(storage_state=AUTH_FILE)
+    page = context.new_page()
+    page.goto(INVENTORY_URL)
+    try:
+        expect(page.get_by_text("Products")).to_be_visible(timeout=5000)
+        return True
+    except AssertionError:
+        return False
+    finally:
+        context.close()
+
+
+@pytest.fixture(scope="session")
+def auth_file(browser):
+    """登录态文件：整个测试会话只做一次真实 UI 登录，之后所有用例复用。
+
+    第一次跑：真登录 → 把 cookie / localStorage 存成 auth.json
+    之后每次跑：先验货 —— 缓存还有效就直接用；过期就删掉重新登录
+    """
+    if os.path.exists(AUTH_FILE) and _storage_state_still_valid(browser):
+        return AUTH_FILE
+
+    if os.path.exists(AUTH_FILE):
+        os.remove(AUTH_FILE)  # 过期的缓存，留着没用
+    return _login_and_save(browser)
 
 
 @pytest.fixture
