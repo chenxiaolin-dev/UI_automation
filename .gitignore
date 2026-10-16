@@ -13,6 +13,7 @@ __pycache__/
 .pytest_cache/
 allure-results/
 allure-report/
+test-results/
 
 # ── 登录态 / 凭证：不能进代码库 ──
 auth.json
