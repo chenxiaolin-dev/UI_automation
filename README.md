@@ -1,26 +1,30 @@
-# ui_automation · Playwright UI 自动化
+# UI Automation · Playwright + pytest 自动化
 
 基于 Playwright + pytest 的 UI 自动化示例：分层设计（页面对象）、
 登录态复用、参数化登录用例，可接入 Jenkins 做持续集成。
 
 ## 技术栈
-Python 3.13 / pytest 9.1 / Playwright 1.64 / pytest-playwright / allure-pytest
+Python 3.13 / pytest 9.1.1 / Playwright 1.64 / pytest-playwright 0.10 / pytest-xdist / allure-pytest
+
 
 ## 目录结构
-config.py       环境地址与测试账号（https://www.saucedemo.com,   ("standard_user", "secret_sauce"), ("locked_out_user", "secret_sauce"),("problem_user", "secret_sauce")）
-pages/          页面对象：所有定位器只出现在这里
-tests/          用例：只有步骤和断言，搜不到一个 CSS
-conftest.py     共享 fixture：登录态缓存（失效自动重登）、失败时落 trace
-practice/       Day8 手写练习，不参与 CI
-pytest.ini      默认参数（testpaths / alluredir）
+config.py       环境地址与测试账号（https://www.saucedemo.com）
+pages/           页面对象：所有定位器只出现在这里
+tests/           用例：只有步骤和断言，搜不到一个 CSS
+conftest.py      共享 fixture：登录态缓存（失效自动重登）、失败时落 trace
+practice/        Day8 手写练习，不参与 CI
+pytest.ini       默认参数（testpaths / alluredir）
+requirements.txt 依赖版本（钉死）
 
 ## 怎么跑
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt
+
+# 首次安装浏览器内核；国内网络下载慢时先设镜像
 set PLAYWRIGHT_DOWNLOAD_HOST=https://cdn.npmmirror.com/binaries/playwright
 .venv\Scripts\python.exe -m playwright install chromium
-.venv\Scripts\python.exe -m pytest
 
+.venv\Scripts\python.exe -m pytest
 期望结果：10 passed（登录 6 条参数化 + 购物车 4 条）
 
 ## 覆盖什么
